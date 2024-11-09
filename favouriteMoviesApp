@@ -1,0 +1,90 @@
+import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+import java.io.*;
+
+public class FavoriteMoviesApp extends Application {
+
+    private final ObservableList<String> movieList = FXCollections.observableArrayList();
+    private final String FILE_NAME = "movies.txt";
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+
+    @Override
+    public void start(Stage primaryStage) {
+        ListView<String> listView = new ListView<>(movieList);
+        listView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
+        TextField textField = new TextField();
+        Button addButton = new Button("Add");
+        Button removeButton = new Button("Remove");
+        Button loadButton = new Button("Load");
+        Button saveButton = new Button("Save");
+
+        addButton.setOnAction(e -> addMovie(textField));
+        removeButton.setOnAction(e -> removeSelectedMovies(listView));
+        loadButton.setOnAction(e -> loadMovies());
+        saveButton.setOnAction(e -> saveMovies());
+
+        VBox layout = new VBox(10, textField, addButton, removeButton, loadButton, saveButton, listView);
+        Scene scene = new Scene(layout, 400, 400);
+
+        primaryStage.setTitle("Favorite Movies App");
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    private void addMovie(TextField textField) {
+        String movie = textField.getText().trim().toLowerCase();
+        if (!movie.isEmpty()) {
+            movieList.add(movie);
+            textField.clear();
+        }
+    }
+
+    private void removeSelectedMovies(ListView<String> listView) {
+        ObservableList<String> selectedItems = listView.getSelectionModel().getSelectedItems();
+        if (selectedItems.isEmpty()) {
+            showAlert("Please select an item to delete!");
+        } else {
+            movieList.removeAll(selectedItems);
+        }
+    }
+
+    private void loadMovies() {
+        movieList.clear();
+        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_NAME))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                movieList.add(line);
+            }
+        } catch (IOException e) {
+            showAlert("Error loading movie list: " + e.getMessage());
+        }
+    }
+
+    private void saveMovies() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME))) {
+            for (String movie : movieList) {
+                writer.write(movie);
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            showAlert("Error saving movie list: " + e.getMessage());
+        }
+    }
+
+    private void showAlert(String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Information");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+}
